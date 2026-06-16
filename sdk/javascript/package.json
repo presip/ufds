@@ -1,0 +1,56 @@
+{
+  "name": "@ufds/sdk",
+  "version": "0.1.0",
+  "description": "Official JavaScript SDK for the Universal Food Delivery Standard (UFDS) — a vendor-neutral API for integrating cloud kitchens with Swiggy, Zomato, ONDC, and direct ordering.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsup",
+    "test": "node --test tests/*.test.js",
+    "typecheck": "tsc --noEmit",
+    "generate:types": "openapi-typescript ../../ufds-spec/api/ufds_v1.0_openapi.yaml -o src/types/openapi.d.ts"
+  },
+  "peerDependencies": {
+    "express": ">=4"
+  },
+  "peerDependenciesMeta": {
+    "express": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.3",
+    "openapi-typescript": "^7.13.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.9.3"
+  },
+  "keywords": [
+    "ufds",
+    "swiggy",
+    "zomato",
+    "ondc",
+    "cloud-kitchen",
+    "food-delivery"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ufds-wg/spec"
+  }
+}

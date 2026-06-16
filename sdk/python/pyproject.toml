@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ufds-sdk"
+version = "0.1.0"
+description = "Official Python SDK for the Universal Food Delivery Standard (UFDS) — a vendor-neutral API for integrating cloud kitchens with Swiggy, Zomato, ONDC, and direct ordering."
+license = { text = "Apache-2.0" }
+requires-python = ">=3.9"
+dependencies = [
+    "httpx>=0.25",
+]
+keywords = ["ufds", "swiggy", "zomato", "ondc", "cloud-kitchen", "food-delivery"]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0",
+]
+
+[project.urls]
+Repository = "https://github.com/ufds-wg/spec"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ufds_sdk"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,53 @@
+{
+  "context": {
+    "domain": "ONDC:RET11",
+    "action": "on_search",
+    "timestamp": "2026-06-16T10:30:00Z",
+    "bpp_id": "seller-app.example.com",
+    "transaction_id": "txn-001"
+  },
+  "message": {
+    "catalog": {
+      "bpp/providers": [
+        {
+          "id": "RST-IN-TS-001",
+          "descriptor": { "name": "Hyderabad House" },
+          "categories": [
+            { "id": "CAT-001", "descriptor": { "name": "Starters" } },
+            { "id": "CAT-002", "descriptor": { "name": "Main Course" } }
+          ],
+          "items": [
+            {
+              "id": "ITEM-001",
+              "category_id": "CAT-001",
+              "descriptor": {
+                "name": "Paneer Tikka",
+                "short_desc": "Grilled cottage cheese",
+                "long_desc": "Grilled cottage cheese marinated in tandoori spices",
+                "images": ["https://cdn.example.com/items/paneer-tikka.jpg"]
+              },
+              "price": { "currency": "INR", "value": "280.00" },
+              "quantity": { "available": { "count": 25 } },
+              "tags": [
+                { "code": "veg_nonveg", "list": [{ "code": "type", "value": "veg" }] }
+              ]
+            },
+            {
+              "id": "ITEM-002",
+              "category_id": "CAT-002",
+              "descriptor": {
+                "name": "Butter Chicken",
+                "long_desc": "Tender chicken in a rich tomato gravy"
+              },
+              "price": { "currency": "INR", "value": "380.00" },
+              "quantity": { "available": { "count": 0 } },
+              "tags": [
+                { "code": "veg_nonveg", "list": [{ "code": "type", "value": "non-veg" }] }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

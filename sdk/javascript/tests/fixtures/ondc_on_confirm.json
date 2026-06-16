@@ -1,0 +1,69 @@
+{
+  "context": {
+    "domain": "ONDC:RET11",
+    "action": "on_confirm",
+    "timestamp": "2026-06-16T12:45:00Z",
+    "bpp_id": "seller-app.example.com",
+    "transaction_id": "txn-002"
+  },
+  "message": {
+    "order": {
+      "id": "ONDC-ORD-9988",
+      "state": "In-progress",
+      "created_at": "2026-06-16T12:44:50Z",
+      "updated_at": "2026-06-16T12:45:30Z",
+      "provider": { "id": "RST-IN-TS-001" },
+      "items": [
+        {
+          "id": "ITEM-001",
+          "descriptor": { "name": "Paneer Tikka" },
+          "quantity": { "count": 2 },
+          "price": { "currency": "INR", "value": "280.00" }
+        },
+        {
+          "id": "ITEM-012",
+          "descriptor": { "name": "Hyderabadi Biryani" },
+          "quantity": { "count": 1 },
+          "price": { "currency": "INR", "value": "450.00" }
+        }
+      ],
+      "billing": {
+        "name": "Priya Sharma",
+        "phone": "+91XXXXXXXXXX"
+      },
+      "fulfillments": [
+        {
+          "id": "FUL-1",
+          "type": "Delivery",
+          "state": { "descriptor": { "code": "Order-picked-up" } },
+          "customer": {
+            "person": { "name": "Priya Sharma" },
+            "contact": { "phone": "+91XXXXXXXXXX" }
+          },
+          "end": {
+            "location": {
+              "gps": "17.4156,78.4347",
+              "address": {
+                "building": "Flat 4B",
+                "street": "Road No. 12",
+                "locality": "Banjara Hills",
+                "city": "Hyderabad",
+                "area_code": "500034"
+              }
+            }
+          }
+        }
+      ],
+      "quote": {
+        "price": { "currency": "INR", "value": "1138.00" },
+        "breakup": [
+          { "title": "Packing charges", "price": { "value": "0.00" } },
+          { "title": "Tax", "price": { "value": "99.00" } },
+          { "title": "Delivery charge", "price": { "value": "49.00" } },
+          { "title": "Discount", "price": { "value": "-20.00" } }
+        ]
+      },
+      "payment": { "type": "PRE-FULFILLMENT", "status": "PAID" }
+    }
+  }
+}
