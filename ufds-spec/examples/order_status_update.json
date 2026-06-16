@@ -1,0 +1,8 @@
+{
+  "ufds_version": "1.0",
+  "timestamp": "2026-06-16T12:48:00Z",
+  "event": "order.status_update",
+  "order_id": "UFDS-ORD-20260616-00142",
+  "status": "ACCEPTED",
+  "eta_minutes": 25
+}

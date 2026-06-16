@@ -1,0 +1,42 @@
+{
+  "ufds_version": "1.0",
+  "timestamp": "2026-06-16T14:00:00Z",
+  "analytics": {
+    "restaurant_id": "RST-IN-TS-001",
+    "period": {
+      "from": "2026-06-01",
+      "to":   "2026-06-15"
+    },
+    "by_platform": {
+      "swiggy": {
+        "orders": 412,
+        "revenue_inr": 182400.00,
+        "avg_order_value": 443.00
+      },
+      "zomato": {
+        "orders": 298,
+        "revenue_inr": 134100.00,
+        "avg_order_value": 450.00
+      },
+      "ondc": {
+        "orders": 87,
+        "revenue_inr": 39150.00,
+        "avg_order_value": 450.00
+      },
+      "direct": {
+        "orders": 54,
+        "revenue_inr": 27000.00,
+        "avg_order_value": 500.00
+      }
+    },
+    "top_items": [
+      { "item_id": "ITEM-012", "name": "Hyderabadi Biryani", "orders": 340, "revenue": 153000.00 },
+      { "item_id": "ITEM-010", "name": "Butter Chicken",     "orders": 290, "revenue": 110200.00 },
+      { "item_id": "ITEM-001", "name": "Paneer Tikka",       "orders": 220, "revenue":  61600.00 },
+      { "item_id": "ITEM-020", "name": "Butter Naan",        "orders": 890, "revenue":  48950.00 },
+      { "item_id": "ITEM-002", "name": "Chicken 65",         "orders": 185, "revenue":  59200.00 }
+    ],
+    "avg_prep_time_minutes": 18.4,
+    "cancellation_rate_pct": 2.4
+  }
+}

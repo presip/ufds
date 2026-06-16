@@ -1,0 +1,1283 @@
+openapi: 3.0.3
+
+info:
+  title: UFDS — Universal Food Delivery Standard
+  version: 1.0.0-draft
+  description: |
+    The **Universal Food Delivery Standard (UFDS)** is an open, vendor-neutral API specification
+    that provides a single integration point for restaurants and cloud kitchens connecting to
+    multiple food delivery platforms (Swiggy, Zomato, ONDC, direct web, and more).
+
+    ## Architecture
+    ```
+    Delivery Platforms  ──►  UFDS Middleware  ──►  Restaurant Systems
+    (Swiggy, Zomato,         (Adapters +            (Cloud Kitchen App,
+     ONDC, Direct)            Core Engine)            POS, KDS, Analytics)
+    ```
+
+    ## Authentication
+    All endpoints require a **Bearer JWT** in the `Authorization` header.
+    Tokens are scoped per restaurant and expire after **24 hours**.
+
+    ## Webhook Signatures
+    Webhook payloads are signed with **HMAC-SHA256**. Verify the
+    `X-UFDS-Signature` header against your webhook secret before processing.
+
+  contact:
+    name: UFDS Working Group
+    url: https://github.com/ufds-wg/spec
+    email: spec@ufds.dev
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+
+servers:
+  - url: https://api.ufds.dev/v1
+    description: Production
+  - url: https://sandbox.ufds.dev/v1
+    description: Sandbox (test orders, no real platform calls)
+
+tags:
+  - name: Menu
+    description: Manage restaurant menus synced across all platforms
+  - name: Orders
+    description: Receive and update orders from any delivery platform
+  - name: Inventory
+    description: Push real-time item availability to all platforms
+  - name: Analytics
+    description: Unified cross-platform business metrics
+  - name: Webhooks
+    description: Inbound event payloads delivered to your registered endpoint
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SECURITY
+# ─────────────────────────────────────────────────────────────────────────────
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued per restaurant, expires in 24 hours.
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # SCHEMAS
+  # ───────────────────────────────────────────────────────────────────────────
+  schemas:
+
+    # ── Shared ──────────────────────────────────────────────────────────────
+
+    UFDSEnvelope:
+      type: object
+      description: Every response is wrapped in this envelope.
+      required: [ufds_version, timestamp]
+      properties:
+        ufds_version:
+          type: string
+          example: "1.0"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-06-16T12:45:00Z"
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, category, message]
+          properties:
+            code:
+              type: string
+              example: UFDS_4022
+            category:
+              type: string
+              enum: [AUTH, VALIDATION, STATE, PLATFORM, INTERNAL]
+            message:
+              type: string
+              example: "item_id ITEM-099 not found in menu for RST-IN-MH-001"
+            field:
+              type: string
+              description: Dot-path to the offending field, if applicable.
+              example: "items[1].item_id"
+            docs:
+              type: string
+              format: uri
+              example: "https://ufds.dev/errors/4022"
+
+    # ── Enums ────────────────────────────────────────────────────────────────
+
+    FoodType:
+      type: string
+      enum: [VEG, NON_VEG, EGG, VEGAN]
+      description: |
+        - `VEG` — Vegetarian (green dot)
+        - `NON_VEG` — Non-vegetarian (brown dot)
+        - `EGG` — Egg-based, no meat
+        - `VEGAN` — No animal products
+
+    OrderStatus:
+      type: string
+      enum:
+        - PENDING
+        - ACCEPTED
+        - PREPARING
+        - READY
+        - PICKED_UP
+        - DELIVERED
+        - CANCELLED
+        - FAILED
+      description: |
+        Valid status transitions:
+        `PENDING → ACCEPTED → PREPARING → READY → PICKED_UP → DELIVERED`
+        Any state may transition to `CANCELLED` or `FAILED`.
+
+    Platform:
+      type: string
+      enum: [swiggy, zomato, ondc, direct]
+      description: The originating delivery platform for an order.
+
+    CancellationReason:
+      type: string
+      enum:
+        - CUSTOMER_REQUEST
+        - ITEM_UNAVAILABLE
+        - RESTAURANT_CLOSED
+        - RIDER_UNAVAILABLE
+        - PAYMENT_FAILED
+        - SYSTEM_ERROR
+
+    UnavailabilityReason:
+      type: string
+      enum: [SOLD_OUT, PREP_UNAVAILABLE, SEASONAL]
+
+    # ── Menu ─────────────────────────────────────────────────────────────────
+
+    CustomisationOption:
+      type: object
+      required: [id, name, price_delta]
+      properties:
+        id:
+          type: string
+          example: OPT-001
+        name:
+          type: string
+          example: Hot
+        price_delta:
+          type: number
+          format: float
+          description: Price added (positive) or subtracted (negative) for this option.
+          example: 0.00
+
+    CustomisationGroup:
+      type: object
+      required: [group, required, options]
+      properties:
+        group:
+          type: string
+          example: Spice Level
+        required:
+          type: boolean
+          example: false
+        min_select:
+          type: integer
+          default: 0
+          example: 0
+        max_select:
+          type: integer
+          default: 1
+          example: 1
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/CustomisationOption'
+
+    MenuItem:
+      type: object
+      required: [id, name, base_price, currency, food_type, available]
+      properties:
+        id:
+          type: string
+          example: ITEM-001
+        name:
+          type: string
+          example: Paneer Tikka
+        description:
+          type: string
+          example: Grilled cottage cheese with spices
+        base_price:
+          type: number
+          format: float
+          example: 280.00
+        currency:
+          type: string
+          default: INR
+          example: INR
+        food_type:
+          $ref: '#/components/schemas/FoodType'
+        available:
+          type: boolean
+          example: true
+        customisations:
+          type: array
+          items:
+            $ref: '#/components/schemas/CustomisationGroup'
+        tags:
+          type: array
+          items:
+            type: string
+          example: [bestseller, gluten-free]
+        prep_time_minutes:
+          type: integer
+          example: 15
+        image_url:
+          type: string
+          format: uri
+          example: https://cdn.example.com/items/paneer-tikka.jpg
+
+    MenuCategory:
+      type: object
+      required: [id, name, display_order, available, items]
+      properties:
+        id:
+          type: string
+          example: CAT-001
+        name:
+          type: string
+          example: Starters
+        display_order:
+          type: integer
+          example: 1
+        available:
+          type: boolean
+          example: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MenuItem'
+
+    Menu:
+      allOf:
+        - $ref: '#/components/schemas/UFDSEnvelope'
+        - type: object
+          required: [restaurant_id, menu]
+          properties:
+            restaurant_id:
+              type: string
+              example: RST-IN-MH-001
+            menu:
+              type: object
+              required: [last_updated, categories]
+              properties:
+                last_updated:
+                  type: string
+                  format: date-time
+                  example: "2026-06-16T10:30:00Z"
+                categories:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/MenuCategory'
+
+    # ── Order ────────────────────────────────────────────────────────────────
+
+    Address:
+      type: object
+      properties:
+        full:
+          type: string
+          example: "Flat 4B, Prestige Towers, Banjara Hills, Hyderabad 500034"
+        lat:
+          type: number
+          format: double
+          example: 17.385
+        lng:
+          type: number
+          format: double
+          example: 78.486
+
+    Customer:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          example: Priya Sharma
+        phone:
+          type: string
+          description: Masked after T+30 days per UFDS data retention policy.
+          example: "+91XXXXXXXXXX"
+        address:
+          $ref: '#/components/schemas/Address'
+
+    OrderItemCustomisation:
+      type: object
+      required: [group, selected]
+      properties:
+        group:
+          type: string
+          example: Spice Level
+        selected:
+          type: string
+          example: Hot
+
+    OrderItem:
+      type: object
+      required: [item_id, name, quantity, unit_price, total_price]
+      properties:
+        item_id:
+          type: string
+          example: ITEM-001
+        name:
+          type: string
+          example: Paneer Tikka
+        quantity:
+          type: integer
+          minimum: 1
+          example: 2
+        unit_price:
+          type: number
+          format: float
+          example: 280.00
+        customisations:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItemCustomisation'
+        total_price:
+          type: number
+          format: float
+          example: 560.00
+
+    OrderPricing:
+      type: object
+      required: [subtotal, taxes, delivery_fee, discount, total, currency, payment_status]
+      properties:
+        subtotal:
+          type: number
+          format: float
+          example: 560.00
+        taxes:
+          type: number
+          format: float
+          example: 50.40
+        delivery_fee:
+          type: number
+          format: float
+          example: 40.00
+        discount:
+          type: number
+          format: float
+          example: 0.00
+        total:
+          type: number
+          format: float
+          example: 650.40
+        currency:
+          type: string
+          default: INR
+          example: INR
+        payment_status:
+          type: string
+          enum: [PREPAID, COD, PENDING]
+          example: PREPAID
+
+    OrderTimestamps:
+      type: object
+      required: [placed]
+      properties:
+        placed:
+          type: string
+          format: date-time
+          example: "2026-06-16T12:44:50Z"
+        accepted:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2026-06-16T12:45:30Z"
+        ready:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+        picked_up:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+        delivered:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+
+    OrderSource:
+      type: object
+      required: [platform, platform_order_id, received_at]
+      properties:
+        platform:
+          $ref: '#/components/schemas/Platform'
+        platform_order_id:
+          type: string
+          example: SWG-993847123
+        received_at:
+          type: string
+          format: date-time
+          example: "2026-06-16T12:45:00Z"
+
+    Order:
+      type: object
+      required: [id, source, restaurant_id, status, customer, items, pricing, timestamps]
+      properties:
+        id:
+          type: string
+          description: UFDS-assigned canonical order ID.
+          example: UFDS-ORD-20260616-00142
+        source:
+          $ref: '#/components/schemas/OrderSource'
+        restaurant_id:
+          type: string
+          example: RST-IN-MH-001
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        customer:
+          $ref: '#/components/schemas/Customer'
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        pricing:
+          $ref: '#/components/schemas/OrderPricing'
+        timestamps:
+          $ref: '#/components/schemas/OrderTimestamps'
+        cancellation_reason:
+          $ref: '#/components/schemas/CancellationReason'
+        special_instructions:
+          type: string
+          example: "Please keep it less spicy"
+
+    OrderResponse:
+      allOf:
+        - $ref: '#/components/schemas/UFDSEnvelope'
+        - type: object
+          required: [order]
+          properties:
+            order:
+              $ref: '#/components/schemas/Order'
+
+    OrderListResponse:
+      allOf:
+        - $ref: '#/components/schemas/UFDSEnvelope'
+        - type: object
+          required: [orders, pagination]
+          properties:
+            orders:
+              type: array
+              items:
+                $ref: '#/components/schemas/Order'
+            pagination:
+              type: object
+              properties:
+                total:
+                  type: integer
+                  example: 148
+                page:
+                  type: integer
+                  example: 1
+                per_page:
+                  type: integer
+                  example: 20
+                next_cursor:
+                  type: string
+                  nullable: true
+                  example: "eyJpZCI6Ijk5In0="
+
+    OrderStatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        cancellation_reason:
+          $ref: '#/components/schemas/CancellationReason'
+        eta_minutes:
+          type: integer
+          description: Estimated minutes until READY (used when transitioning to PREPARING).
+          example: 18
+
+    # ── Inventory ────────────────────────────────────────────────────────────
+
+    InventoryItem:
+      type: object
+      required: [item_id, available]
+      properties:
+        item_id:
+          type: string
+          example: ITEM-001
+        available:
+          type: boolean
+          example: false
+        stock_count:
+          type: integer
+          nullable: true
+          description: Absolute count; null means unlimited.
+          example: null
+        reason:
+          $ref: '#/components/schemas/UnavailabilityReason'
+
+    InventoryUpdate:
+      allOf:
+        - $ref: '#/components/schemas/UFDSEnvelope'
+        - type: object
+          required: [restaurant_id, items]
+          properties:
+            restaurant_id:
+              type: string
+              example: RST-IN-MH-001
+            items:
+              type: array
+              minItems: 1
+              items:
+                $ref: '#/components/schemas/InventoryItem'
+
+    # ── Analytics ────────────────────────────────────────────────────────────
+
+    PlatformMetrics:
+      type: object
+      properties:
+        orders:
+          type: integer
+          example: 412
+        revenue_inr:
+          type: number
+          format: float
+          example: 182400.00
+        avg_order_value:
+          type: number
+          format: float
+          example: 443.00
+
+    TopItem:
+      type: object
+      properties:
+        item_id:
+          type: string
+          example: ITEM-001
+        name:
+          type: string
+          example: Paneer Tikka
+        orders:
+          type: integer
+          example: 340
+        revenue:
+          type: number
+          format: float
+          example: 95200.00
+
+    AnalyticsResponse:
+      allOf:
+        - $ref: '#/components/schemas/UFDSEnvelope'
+        - type: object
+          required: [analytics]
+          properties:
+            analytics:
+              type: object
+              properties:
+                restaurant_id:
+                  type: string
+                  example: RST-IN-MH-001
+                period:
+                  type: object
+                  properties:
+                    from:
+                      type: string
+                      format: date
+                      example: "2026-06-01"
+                    to:
+                      type: string
+                      format: date
+                      example: "2026-06-15"
+                by_platform:
+                  type: object
+                  additionalProperties:
+                    $ref: '#/components/schemas/PlatformMetrics'
+                  example:
+                    swiggy:
+                      orders: 412
+                      revenue_inr: 182400
+                      avg_order_value: 443
+                    zomato:
+                      orders: 298
+                      revenue_inr: 134100
+                      avg_order_value: 450
+                top_items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/TopItem'
+                avg_prep_time_minutes:
+                  type: number
+                  format: float
+                  example: 18.0
+                cancellation_rate_pct:
+                  type: number
+                  format: float
+                  example: 2.4
+
+    # ── Webhook Payloads ─────────────────────────────────────────────────────
+
+    WebhookOrderNew:
+      allOf:
+        - $ref: '#/components/schemas/UFDSEnvelope'
+        - type: object
+          required: [event, order]
+          properties:
+            event:
+              type: string
+              enum: [order.new]
+            order:
+              $ref: '#/components/schemas/Order'
+
+    WebhookOrderStatusUpdate:
+      allOf:
+        - $ref: '#/components/schemas/UFDSEnvelope'
+        - type: object
+          required: [event, order_id, status]
+          properties:
+            event:
+              type: string
+              enum: [order.status_update]
+            order_id:
+              type: string
+              example: UFDS-ORD-20260616-00142
+            status:
+              $ref: '#/components/schemas/OrderStatus'
+            cancellation_reason:
+              $ref: '#/components/schemas/CancellationReason'
+
+    WebhookOrderCancelled:
+      allOf:
+        - $ref: '#/components/schemas/UFDSEnvelope'
+        - type: object
+          required: [event, order_id, reason]
+          properties:
+            event:
+              type: string
+              enum: [order.cancelled]
+            order_id:
+              type: string
+              example: UFDS-ORD-20260616-00142
+            reason:
+              $ref: '#/components/schemas/CancellationReason'
+
+    WebhookPlatformOffline:
+      allOf:
+        - $ref: '#/components/schemas/UFDSEnvelope'
+        - type: object
+          required: [event, platform]
+          properties:
+            event:
+              type: string
+              enum: [platform.offline]
+            platform:
+              $ref: '#/components/schemas/Platform'
+            message:
+              type: string
+              example: "Swiggy Partner API returning 503 — retrying."
+
+    WebhookMenuSyncFailed:
+      allOf:
+        - $ref: '#/components/schemas/UFDSEnvelope'
+        - type: object
+          required: [event, platform, restaurant_id]
+          properties:
+            event:
+              type: string
+              enum: [menu.sync_failed]
+            platform:
+              $ref: '#/components/schemas/Platform'
+            restaurant_id:
+              type: string
+              example: RST-IN-MH-001
+            reason:
+              type: string
+              example: "Platform rejected menu — invalid category ID format."
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # PARAMETERS
+  # ───────────────────────────────────────────────────────────────────────────
+  parameters:
+    restaurantId:
+      name: restaurant_id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Unique UFDS restaurant identifier.
+      example: RST-IN-MH-001
+
+    orderId:
+      name: order_id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: UFDS canonical order ID.
+      example: UFDS-ORD-20260616-00142
+
+    itemId:
+      name: item_id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Menu item identifier.
+      example: ITEM-001
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # RESPONSES (reusable)
+  # ───────────────────────────────────────────────────────────────────────────
+  responses:
+    Unauthorized:
+      description: Missing or invalid bearer token.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: UFDS_4001
+              category: AUTH
+              message: "Missing or invalid bearer token."
+              docs: "https://ufds.dev/errors/4001"
+
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    ValidationError:
+      description: Request payload failed validation.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    RateLimited:
+      description: Rate limit exceeded.
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds until the rate limit resets.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PATHS
+# ─────────────────────────────────────────────────────────────────────────────
+paths:
+
+  # ── MENU ──────────────────────────────────────────────────────────────────
+
+  /menu/{restaurant_id}:
+    parameters:
+      - $ref: '#/components/parameters/restaurantId'
+
+    get:
+      tags: [Menu]
+      operationId: getMenu
+      summary: Fetch full menu
+      description: Returns the complete UFDS-normalised menu for the restaurant.
+      responses:
+        '200':
+          description: Menu retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Menu'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+    put:
+      tags: [Menu]
+      operationId: replaceMenu
+      summary: Replace entire menu
+      description: |
+        Replaces the restaurant's full menu and fans the update out to all
+        connected delivery platforms via their respective adapters.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Menu'
+      responses:
+        '200':
+          description: Menu replaced and sync initiated on all platforms.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Menu'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /menu/{restaurant_id}/items/{item_id}:
+    parameters:
+      - $ref: '#/components/parameters/restaurantId'
+      - $ref: '#/components/parameters/itemId'
+
+    patch:
+      tags: [Menu]
+      operationId: updateMenuItem
+      summary: Update a single menu item
+      description: Partially update one item (price, availability, description, etc.).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MenuItem'
+      responses:
+        '200':
+          description: Item updated and synced.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MenuItem'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Menu]
+      operationId: deleteMenuItem
+      summary: Remove a menu item
+      description: Permanently removes the item from the menu and all connected platforms.
+      responses:
+        '204':
+          description: Item removed successfully.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── ORDERS ────────────────────────────────────────────────────────────────
+
+  /orders/{restaurant_id}:
+    parameters:
+      - $ref: '#/components/parameters/restaurantId'
+
+    get:
+      tags: [Orders]
+      operationId: listOrders
+      summary: List orders
+      description: |
+        Returns a paginated list of orders. Filterable by status, platform,
+        and date range. Results are sorted by `placed` timestamp descending.
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/OrderStatus'
+          description: Filter by order status.
+        - name: platform
+          in: query
+          schema:
+            $ref: '#/components/schemas/Platform'
+          description: Filter by source platform.
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Start date (inclusive).
+          example: "2026-06-01"
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date
+          description: End date (inclusive).
+          example: "2026-06-16"
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        '200':
+          description: Order list returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /orders/{restaurant_id}/{order_id}:
+    parameters:
+      - $ref: '#/components/parameters/restaurantId'
+      - $ref: '#/components/parameters/orderId'
+
+    get:
+      tags: [Orders]
+      operationId: getOrder
+      summary: Fetch a single order
+      description: Returns the full UFDS Order Object for the given order ID.
+      responses:
+        '200':
+          description: Order retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Orders]
+      operationId: updateOrderStatus
+      summary: Update order status
+      description: |
+        Transitions the order to a new status. UFDS validates the transition
+        (e.g. cannot go from `DELIVERED` back to `PREPARING`) and propagates
+        the update to the originating platform via its adapter.
+
+        Valid transitions:
+        - `PENDING` → `ACCEPTED` or `CANCELLED`
+        - `ACCEPTED` → `PREPARING` or `CANCELLED`
+        - `PREPARING` → `READY` or `CANCELLED`
+        - `READY` → `PICKED_UP` or `CANCELLED`
+        - `PICKED_UP` → `DELIVERED`
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderStatusUpdate'
+            examples:
+              accept:
+                summary: Accept an order
+                value:
+                  status: ACCEPTED
+              preparing:
+                summary: Mark as preparing with ETA
+                value:
+                  status: PREPARING
+                  eta_minutes: 20
+              ready:
+                summary: Food is ready for pickup
+                value:
+                  status: READY
+              cancel:
+                summary: Cancel with reason
+                value:
+                  status: CANCELLED
+                  cancellation_reason: ITEM_UNAVAILABLE
+      responses:
+        '200':
+          description: Status updated and propagated to platform.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Invalid status transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: UFDS_4030
+                  category: STATE
+                  message: "Cannot transition from DELIVERED to PREPARING."
+                  docs: "https://ufds.dev/errors/4030"
+
+  /orders/{restaurant_id}/simulate:
+    parameters:
+      - $ref: '#/components/parameters/restaurantId'
+
+    post:
+      tags: [Orders]
+      operationId: simulateOrder
+      summary: Inject a test order (sandbox only)
+      description: |
+        Available in the **sandbox environment only**. Injects a synthetic order
+        to test your webhook handler and order lifecycle integration without
+        any real platform involvement.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                platform:
+                  $ref: '#/components/schemas/Platform'
+                item_ids:
+                  type: array
+                  items:
+                    type: string
+                  example: [ITEM-001, ITEM-012]
+      responses:
+        '201':
+          description: Simulated order created and webhook fired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '403':
+          description: Simulation not available in production.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ── INVENTORY ─────────────────────────────────────────────────────────────
+
+  /inventory/{restaurant_id}:
+    parameters:
+      - $ref: '#/components/parameters/restaurantId'
+
+    post:
+      tags: [Inventory]
+      operationId: bulkInventoryUpdate
+      summary: Bulk availability update
+      description: |
+        Push availability changes for multiple items in one call.
+        UFDS fans the update out to all connected platforms simultaneously.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryUpdate'
+            example:
+              ufds_version: "1.0"
+              timestamp: "2026-06-16T13:00:00Z"
+              restaurant_id: RST-IN-MH-001
+              items:
+                - item_id: ITEM-001
+                  available: true
+                  stock_count: null
+                - item_id: ITEM-005
+                  available: false
+                  reason: SOLD_OUT
+      responses:
+        '200':
+          description: Inventory synced to all connected platforms.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ufds_version:
+                    type: string
+                  synced_platforms:
+                    type: array
+                    items:
+                      type: string
+                    example: [swiggy, zomato, ondc]
+                  failed_platforms:
+                    type: array
+                    items:
+                      type: string
+                    example: []
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /inventory/{restaurant_id}/{item_id}:
+    parameters:
+      - $ref: '#/components/parameters/restaurantId'
+      - $ref: '#/components/parameters/itemId'
+
+    patch:
+      tags: [Inventory]
+      operationId: updateItemAvailability
+      summary: Toggle single item availability
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryItem'
+      responses:
+        '200':
+          description: Item availability updated across all platforms.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryItem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── ANALYTICS ─────────────────────────────────────────────────────────────
+
+  /analytics/{restaurant_id}:
+    parameters:
+      - $ref: '#/components/parameters/restaurantId'
+
+    get:
+      tags: [Analytics]
+      operationId: getAnalytics
+      summary: Unified cross-platform analytics
+      description: |
+        Returns aggregated business metrics for the restaurant across all
+        connected platforms for the requested time period.
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: "2026-06-01"
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: "2026-06-15"
+        - name: platform
+          in: query
+          schema:
+            $ref: '#/components/schemas/Platform'
+          description: Filter to a single platform (omit for all).
+      responses:
+        '200':
+          description: Analytics data returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  # ── WEBHOOKS (documentation only) ─────────────────────────────────────────
+
+  /webhooks/order.new:
+    post:
+      tags: [Webhooks]
+      operationId: webhookOrderNew
+      summary: "[Inbound] New order received"
+      description: |
+        UFDS delivers this payload to your registered webhook URL when a new
+        order arrives from any platform. Respond with HTTP 200 within 5 seconds.
+        Failed deliveries are retried up to 3 times with exponential backoff.
+
+        Verify the `X-UFDS-Signature` header (HMAC-SHA256 of the raw body
+        using your webhook secret) before processing.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookOrderNew'
+      responses:
+        '200':
+          description: Acknowledged.
+
+  /webhooks/order.status_update:
+    post:
+      tags: [Webhooks]
+      operationId: webhookOrderStatusUpdate
+      summary: "[Inbound] Order status changed"
+      description: |
+        Delivered when the originating platform updates an order's status
+        (e.g. rider assigned, order picked up).
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookOrderStatusUpdate'
+      responses:
+        '200':
+          description: Acknowledged.
+
+  /webhooks/order.cancelled:
+    post:
+      tags: [Webhooks]
+      operationId: webhookOrderCancelled
+      summary: "[Inbound] Order cancelled"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookOrderCancelled'
+      responses:
+        '200':
+          description: Acknowledged.
+
+  /webhooks/platform.offline:
+    post:
+      tags: [Webhooks]
+      operationId: webhookPlatformOffline
+      summary: "[Inbound] Platform unreachable"
+      description: |
+        Fired when UFDS cannot reach a connected delivery platform.
+        Use this to display a warning in your kitchen dashboard.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookPlatformOffline'
+      responses:
+        '200':
+          description: Acknowledged.
+
+  /webhooks/menu.sync_failed:
+    post:
+      tags: [Webhooks]
+      operationId: webhookMenuSyncFailed
+      summary: "[Inbound] Menu sync failed on a platform"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookMenuSyncFailed'
+      responses:
+        '200':
+          description: Acknowledged.

@@ -1,0 +1,17 @@
+{
+  "ufds_version": "1.0",
+  "timestamp": "2026-06-16T13:00:00Z",
+  "restaurant_id": "RST-IN-TS-001",
+  "items": [
+    { "item_id": "ITEM-001", "available": true,  "stock_count": null },
+    { "item_id": "ITEM-002", "available": true,  "stock_count": null },
+    { "item_id": "ITEM-003", "available": false, "reason": "SOLD_OUT" },
+    { "item_id": "ITEM-010", "available": true,  "stock_count": null },
+    { "item_id": "ITEM-011", "available": true,  "stock_count": null },
+    { "item_id": "ITEM-012", "available": true,  "stock_count": 10   },
+    { "item_id": "ITEM-020", "available": true,  "stock_count": null },
+    { "item_id": "ITEM-021", "available": false, "reason": "PREP_UNAVAILABLE" },
+    { "item_id": "ITEM-030", "available": true,  "stock_count": null },
+    { "item_id": "ITEM-040", "available": true,  "stock_count": null }
+  ]
+}

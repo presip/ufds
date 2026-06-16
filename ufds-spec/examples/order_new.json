@@ -1,0 +1,75 @@
+{
+  "ufds_version": "1.0",
+  "timestamp": "2026-06-16T12:45:00Z",
+  "event": "order.new",
+  "order": {
+    "id": "UFDS-ORD-20260616-00142",
+    "source": {
+      "platform": "swiggy",
+      "platform_order_id": "SWG-993847123",
+      "received_at": "2026-06-16T12:45:00Z"
+    },
+    "restaurant_id": "RST-IN-TS-001",
+    "status": "PENDING",
+    "customer": {
+      "name": "Priya Sharma",
+      "phone": "+91XXXXXXXXXX",
+      "address": {
+        "full": "Flat 4B, Prestige Towers, Road No. 12, Banjara Hills, Hyderabad 500034",
+        "lat": 17.4156,
+        "lng": 78.4347
+      }
+    },
+    "items": [
+      {
+        "item_id": "ITEM-012",
+        "name": "Hyderabadi Biryani",
+        "quantity": 1,
+        "unit_price": 450.00,
+        "customisations": [
+          { "group": "Protein",  "selected": "Mutton" },
+          { "group": "Raita",    "selected": "Boondi Raita" }
+        ],
+        "total_price": 490.00
+      },
+      {
+        "item_id": "ITEM-001",
+        "name": "Paneer Tikka",
+        "quantity": 1,
+        "unit_price": 280.00,
+        "customisations": [
+          { "group": "Spice Level", "selected": "Hot" },
+          { "group": "Add-ons",     "selected": "Extra Mint Chutney" }
+        ],
+        "total_price": 300.00
+      },
+      {
+        "item_id": "ITEM-040",
+        "name": "Mango Lassi",
+        "quantity": 2,
+        "unit_price": 110.00,
+        "customisations": [
+          { "group": "Sweetness", "selected": "Regular" }
+        ],
+        "total_price": 220.00
+      }
+    ],
+    "pricing": {
+      "subtotal": 1010.00,
+      "taxes": 90.90,
+      "delivery_fee": 49.00,
+      "discount": 100.00,
+      "total": 1049.90,
+      "currency": "INR",
+      "payment_status": "PREPAID"
+    },
+    "timestamps": {
+      "placed":    "2026-06-16T12:44:50Z",
+      "accepted":  null,
+      "ready":     null,
+      "picked_up": null,
+      "delivered": null
+    },
+    "special_instructions": "Please keep the biryani less spicy and pack the raita separately."
+  }
+}

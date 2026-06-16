@@ -1,0 +1,7 @@
+{
+  "ufds_version": "1.0",
+  "timestamp": "2026-06-16T12:55:00Z",
+  "event": "order.cancelled",
+  "order_id": "UFDS-ORD-20260616-00142",
+  "reason": "ITEM_UNAVAILABLE"
+}

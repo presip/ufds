@@ -1,0 +1,303 @@
+{
+  "ufds_version": "1.0",
+  "timestamp": "2026-06-16T10:30:00Z",
+  "restaurant_id": "RST-IN-TS-001",
+  "menu": {
+    "last_updated": "2026-06-16T10:30:00Z",
+    "categories": [
+      {
+        "id": "CAT-001",
+        "name": "Starters",
+        "display_order": 1,
+        "available": true,
+        "items": [
+          {
+            "id": "ITEM-001",
+            "name": "Paneer Tikka",
+            "description": "Grilled cottage cheese marinated in tandoori spices, served with mint chutney",
+            "base_price": 280.00,
+            "currency": "INR",
+            "food_type": "VEG",
+            "available": true,
+            "prep_time_minutes": 15,
+            "image_url": "https://cdn.example.com/items/paneer-tikka.jpg",
+            "tags": ["bestseller", "gluten-free"],
+            "customisations": [
+              {
+                "group": "Spice Level",
+                "required": false,
+                "min_select": 0,
+                "max_select": 1,
+                "options": [
+                  { "id": "OPT-001", "name": "Mild",   "price_delta": 0.00 },
+                  { "id": "OPT-002", "name": "Medium", "price_delta": 0.00 },
+                  { "id": "OPT-003", "name": "Hot",    "price_delta": 0.00 }
+                ]
+              },
+              {
+                "group": "Add-ons",
+                "required": false,
+                "min_select": 0,
+                "max_select": 2,
+                "options": [
+                  { "id": "OPT-010", "name": "Extra Mint Chutney", "price_delta": 20.00 },
+                  { "id": "OPT-011", "name": "Extra Butter",       "price_delta": 30.00 }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "ITEM-002",
+            "name": "Chicken 65",
+            "description": "Crispy deep-fried chicken with curry leaves and green chillies",
+            "base_price": 320.00,
+            "currency": "INR",
+            "food_type": "NON_VEG",
+            "available": true,
+            "prep_time_minutes": 18,
+            "image_url": "https://cdn.example.com/items/chicken-65.jpg",
+            "tags": ["spicy", "bestseller"],
+            "customisations": [
+              {
+                "group": "Spice Level",
+                "required": false,
+                "min_select": 0,
+                "max_select": 1,
+                "options": [
+                  { "id": "OPT-001", "name": "Mild",   "price_delta": 0.00 },
+                  { "id": "OPT-002", "name": "Medium", "price_delta": 0.00 },
+                  { "id": "OPT-003", "name": "Hot",    "price_delta": 0.00 }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "ITEM-003",
+            "name": "Veg Spring Rolls",
+            "description": "Crispy rolls stuffed with seasoned vegetables",
+            "base_price": 180.00,
+            "currency": "INR",
+            "food_type": "VEG",
+            "available": false,
+            "prep_time_minutes": 12,
+            "image_url": "https://cdn.example.com/items/spring-rolls.jpg",
+            "tags": ["vegan"],
+            "customisations": []
+          }
+        ]
+      },
+      {
+        "id": "CAT-002",
+        "name": "Main Course",
+        "display_order": 2,
+        "available": true,
+        "items": [
+          {
+            "id": "ITEM-010",
+            "name": "Butter Chicken",
+            "description": "Tender chicken in a rich, creamy tomato-based gravy",
+            "base_price": 380.00,
+            "currency": "INR",
+            "food_type": "NON_VEG",
+            "available": true,
+            "prep_time_minutes": 20,
+            "image_url": "https://cdn.example.com/items/butter-chicken.jpg",
+            "tags": ["bestseller", "must-try"],
+            "customisations": [
+              {
+                "group": "Portion Size",
+                "required": true,
+                "min_select": 1,
+                "max_select": 1,
+                "options": [
+                  { "id": "OPT-020", "name": "Half",  "price_delta": -80.00 },
+                  { "id": "OPT-021", "name": "Full",  "price_delta": 0.00 }
+                ]
+              },
+              {
+                "group": "Spice Level",
+                "required": false,
+                "min_select": 0,
+                "max_select": 1,
+                "options": [
+                  { "id": "OPT-001", "name": "Mild",   "price_delta": 0.00 },
+                  { "id": "OPT-002", "name": "Medium", "price_delta": 0.00 },
+                  { "id": "OPT-003", "name": "Hot",    "price_delta": 0.00 }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "ITEM-011",
+            "name": "Dal Makhani",
+            "description": "Slow-cooked black lentils in a buttery tomato gravy",
+            "base_price": 260.00,
+            "currency": "INR",
+            "food_type": "VEG",
+            "available": true,
+            "prep_time_minutes": 15,
+            "image_url": "https://cdn.example.com/items/dal-makhani.jpg",
+            "tags": ["vegan-option", "gluten-free"],
+            "customisations": [
+              {
+                "group": "Portion Size",
+                "required": true,
+                "min_select": 1,
+                "max_select": 1,
+                "options": [
+                  { "id": "OPT-020", "name": "Half", "price_delta": -60.00 },
+                  { "id": "OPT-021", "name": "Full",  "price_delta": 0.00 }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "ITEM-012",
+            "name": "Hyderabadi Biryani",
+            "description": "Fragrant basmati rice slow-cooked with tender mutton and whole spices",
+            "base_price": 450.00,
+            "currency": "INR",
+            "food_type": "NON_VEG",
+            "available": true,
+            "prep_time_minutes": 25,
+            "image_url": "https://cdn.example.com/items/biryani.jpg",
+            "tags": ["must-try", "signature"],
+            "customisations": [
+              {
+                "group": "Protein",
+                "required": true,
+                "min_select": 1,
+                "max_select": 1,
+                "options": [
+                  { "id": "OPT-030", "name": "Mutton",  "price_delta": 0.00 },
+                  { "id": "OPT-031", "name": "Chicken", "price_delta": -50.00 },
+                  { "id": "OPT-032", "name": "Veg",     "price_delta": -100.00 }
+                ]
+              },
+              {
+                "group": "Raita",
+                "required": false,
+                "min_select": 0,
+                "max_select": 1,
+                "options": [
+                  { "id": "OPT-040", "name": "Boondi Raita",  "price_delta": 40.00 },
+                  { "id": "OPT-041", "name": "Cucumber Raita","price_delta": 40.00 }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "CAT-003",
+        "name": "Breads",
+        "display_order": 3,
+        "available": true,
+        "items": [
+          {
+            "id": "ITEM-020",
+            "name": "Butter Naan",
+            "description": "Soft leavened bread baked in tandoor, topped with butter",
+            "base_price": 55.00,
+            "currency": "INR",
+            "food_type": "VEG",
+            "available": true,
+            "prep_time_minutes": 8,
+            "image_url": "https://cdn.example.com/items/butter-naan.jpg",
+            "tags": [],
+            "customisations": [
+              {
+                "group": "Quantity",
+                "required": true,
+                "min_select": 1,
+                "max_select": 1,
+                "options": [
+                  { "id": "OPT-050", "name": "1 piece",  "price_delta": 0.00 },
+                  { "id": "OPT-051", "name": "2 pieces", "price_delta": 55.00 },
+                  { "id": "OPT-052", "name": "4 pieces", "price_delta": 165.00 }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "ITEM-021",
+            "name": "Garlic Naan",
+            "description": "Naan topped with fresh garlic and coriander",
+            "base_price": 65.00,
+            "currency": "INR",
+            "food_type": "VEG",
+            "available": true,
+            "prep_time_minutes": 8,
+            "image_url": "https://cdn.example.com/items/garlic-naan.jpg",
+            "tags": [],
+            "customisations": []
+          }
+        ]
+      },
+      {
+        "id": "CAT-004",
+        "name": "Desserts",
+        "display_order": 4,
+        "available": true,
+        "items": [
+          {
+            "id": "ITEM-030",
+            "name": "Gulab Jamun",
+            "description": "Soft milk-solid dumplings soaked in rose-flavoured sugar syrup",
+            "base_price": 120.00,
+            "currency": "INR",
+            "food_type": "VEG",
+            "available": true,
+            "prep_time_minutes": 5,
+            "image_url": "https://cdn.example.com/items/gulab-jamun.jpg",
+            "tags": ["sweet"],
+            "customisations": [
+              {
+                "group": "Serve with",
+                "required": false,
+                "min_select": 0,
+                "max_select": 1,
+                "options": [
+                  { "id": "OPT-060", "name": "Vanilla Ice Cream", "price_delta": 60.00 }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "CAT-005",
+        "name": "Beverages",
+        "display_order": 5,
+        "available": true,
+        "items": [
+          {
+            "id": "ITEM-040",
+            "name": "Mango Lassi",
+            "description": "Chilled yogurt drink blended with fresh Alphonso mango",
+            "base_price": 110.00,
+            "currency": "INR",
+            "food_type": "VEG",
+            "available": true,
+            "prep_time_minutes": 5,
+            "image_url": "https://cdn.example.com/items/mango-lassi.jpg",
+            "tags": ["chilled", "seasonal"],
+            "customisations": [
+              {
+                "group": "Sweetness",
+                "required": false,
+                "min_select": 0,
+                "max_select": 1,
+                "options": [
+                  { "id": "OPT-070", "name": "Less Sweet",  "price_delta": 0.00 },
+                  { "id": "OPT-071", "name": "Regular",     "price_delta": 0.00 },
+                  { "id": "OPT-072", "name": "Extra Sweet", "price_delta": 0.00 }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
