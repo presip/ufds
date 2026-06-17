@@ -238,6 +238,15 @@ components:
           type: string
           format: uri
           example: https://cdn.example.com/items/paneer-tikka.jpg
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+          description: Optional array of image URLs for the menu item (higher-res variants, different angles, etc.). Can include or exclude the primary image_url.
+          example:
+            - https://cdn.example.com/items/paneer-tikka-1.jpg
+            - https://cdn.example.com/items/paneer-tikka-2.jpg
 
     MenuCategory:
       type: object
@@ -259,6 +268,14 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/MenuItem'
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+          description: Optional array of image URLs for the category (e.g., category header/cover images).
+          example:
+            - https://cdn.example.com/categories/starters-header.jpg
 
     Menu:
       allOf:

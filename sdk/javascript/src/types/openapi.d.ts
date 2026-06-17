@@ -474,6 +474,14 @@ export interface components {
              * @example https://cdn.example.com/items/paneer-tikka.jpg
              */
             image_url?: string;
+            /**
+             * @description Optional array of image URLs for the menu item (higher-res variants, different angles, etc.). Can include or exclude the primary image_url.
+             * @example [
+             *       "https://cdn.example.com/items/paneer-tikka-1.jpg",
+             *       "https://cdn.example.com/items/paneer-tikka-2.jpg"
+             *     ]
+             */
+            images?: string[];
         };
         MenuCategory: {
             /** @example CAT-001 */
@@ -485,6 +493,13 @@ export interface components {
             /** @example true */
             available: boolean;
             items: components["schemas"]["MenuItem"][];
+            /**
+             * @description Optional array of image URLs for the category (e.g., category header/cover images).
+             * @example [
+             *       "https://cdn.example.com/categories/starters-header.jpg"
+             *     ]
+             */
+            images?: string[];
         };
         Menu: components["schemas"]["UFDSEnvelope"] & {
             /** @example RST-IN-MH-001 */

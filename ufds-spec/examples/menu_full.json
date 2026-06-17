@@ -10,6 +10,9 @@
         "name": "Starters",
         "display_order": 1,
         "available": true,
+        "images": [
+          "https://cdn.example.com/categories/starters-header.jpg"
+        ],
         "items": [
           {
             "id": "ITEM-001",
@@ -21,6 +24,10 @@
             "available": true,
             "prep_time_minutes": 15,
             "image_url": "https://cdn.example.com/items/paneer-tikka.jpg",
+            "images": [
+              "https://cdn.example.com/items/paneer-tikka-1.jpg",
+              "https://cdn.example.com/items/paneer-tikka-2.jpg"
+            ],
             "tags": ["bestseller", "gluten-free"],
             "customisations": [
               {
